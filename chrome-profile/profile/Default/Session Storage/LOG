@@ -1,0 +1,11 @@
+2019/11/12-16:16:59.724 30cc Reusing MANIFEST Session Storage/MANIFEST-000001
+2019/11/12-16:16:59.724 30cc Recovering log #3
+2019/11/12-16:16:59.724 30cc Level-0 table #3: started
+2019/11/12-16:16:59.727 30cc Level-0 table #3: 78688 bytes OK
+2019/11/12-16:16:59.728 30cc Delete type=0 #3
+2019/11/12-16:18:59.731 30c0 Level-0 table #6: started
+2019/11/12-16:18:59.746 30c0 Level-0 table #6: 97382 bytes OK
+2019/11/12-16:18:59.747 30c0 Delete type=0 #4
+2019/11/12-16:20:32.270 30c0 Level-0 table #8: started
+2019/11/12-16:20:32.273 30c0 Level-0 table #8: 102602 bytes OK
+2019/11/12-16:20:32.274 30c0 Delete type=0 #5
