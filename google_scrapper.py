@@ -21,6 +21,8 @@ import random
 
 import logging
 
+from googlesearch import search
+
 log = logging.getLogger(__name__)
 
 ############### DO NOT REMOVE BELOW ####################################
@@ -28,7 +30,9 @@ import chromedriver_binary  # Adds chromedriver binary to path
 
 page_load_timeout = 45
 
-START_URL_TMPL = 'https://www.google.ca'
+
+GOOLGE_TLD = 'com.au'
+GOOLGE_URL = 'https://www.google.{}'.format(GOOLGE_TLD)
 user_agent_list = [
     # Chrome
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36',
@@ -97,9 +101,9 @@ class GScrapper:
 
         self.driver.set_page_load_timeout(page_load_timeout)
 
-    def __del__(self):
-        if self.close_driver == True and self.driver:
-            self.driver.quit()
+    # def __del__(self):
+    #     if self.close_driver == True and self.driver:
+    #         self.driver.quit()
 
     def scrap(self, brand, store):
         print('Scrapping {} {}'.format(brand,store))
@@ -107,20 +111,22 @@ class GScrapper:
         search_query = '{} {}'.format(brand, store)
 
 
-        self.driver.get(START_URL_TMPL)
-        search = self.driver.find_element_by_name('q')
-        search.send_keys(search_query)
-        search.send_keys(Keys.RETURN)  # hit return after you enter search text
+        self.driver.get(GOOLGE_URL)
+        search_box = self.driver.find_element_by_name('q')
+        search_box.send_keys(search_query)
+        search_box.send_keys(Keys.RETURN)  # hit return after you enter search text
 
         try:
             rhs_block = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.ID, 'rhs_block')))
         except:
             print('Google Store Box not found')
         else:
+            fb_link_found = False
             try:
                 fb_a = rhs_block.find_element_by_xpath('//span[@title="Facebook"]/..')
+                fb_link_found =True
             except:
-                print('FB Link not found')
+                print('FB Link not found in google box')
             else:
                 fb_link = fb_a.get_attribute('href')
                 data.update({'fb_link': fb_link})
@@ -136,105 +142,25 @@ class GScrapper:
 
                 data.update({'g_link': gr_link})
 
+
+            if fb_link_found == False:
+
+                for url in search('site:facebook.com AND {}'.format(search_query), stop=1,tld=GOOLGE_TLD):
+                    data.update({'fb_link': url})
+                    break
+
+
         return data
 
 
 if __name__ == '__main__':
     import csv
+    import store_names
     from random import randint
     scrapper = GScrapper(headless=True, close_driver=True)
     result =[]
-    for store in ['Mayfair',
-'Woodgrove',
-'Cherry Lane',
-'Hillside',
-'Guildford Town Centre',
-'Aberdeen',
-'Tsawwassen',
-'Village Green',
-'Orchard Park',
-'Lougheed',
-'Seven Oaks',
-'Metrotown Centre',
-'Willowbrook Shopping Centre',
-'Cottonwood',
-'Richmond Centre',
-'Pine Centre',
-'Park Royal',
-'Brentwood',
-'McAthur Glen Outlet',
-'Fairview Park',
-'Pen Centre',
-'Masonville',
-'White Oaks',
-'Cambridge',
-'Devonshire',
-'Stone Road',
-'Niagara',
-'Oakville Place',
-'Limeridge',
-'Lynden Park',
-'Halifax',
-'Conestoga Mall',
-'McAllister Place',
-'Regent Mall',
-'Charlottetown',
-'Maple View',
-'Burlington Centre',
-'Pickering',
-'Oshawa',
-'Scarborough Town Centre',
-'Markville',
-'St Laurent',
-'Hillcrest',
-'Bayshore',
-'Place D`Orleans',
-'Yorkdale',
-'Cataraqui',
-'Carlingwood',
-'Cadillac Fairview Mall',
-'Rideau Centre',
-'Quinte Mall',
-'Kildonan',
-'Polo Park',
-'St Vital',
-'Brandon',
-'Winnipeg Outlet',
-'Kingsway Garden Mall',
-'West Edmonton Mall',
-'Prairie Mall',
-'Edmonton City Centre',
-'Peter Pond',
-'Sherwood Park',
-'Londonderry Mall',
-'St Albert',
-'Edmonton Outlet',
-'Sunridge Mall',
-'Marlborough',
-'South Centre',
-'Crossiron Mills',
-'Bower Place',
-'Chinook',
-'Midtown Plaza',
-'Market Mall',
-'Medicine Hat Mall',
-'Park Place',
-'Bramalea',
-'Upper Canada Mall',
-'Georgian Mall',
-'Dufferin',
-'Yonge Eglinton',
-'Inter City',
-'Erin Mills',
-'Sherway',
-'Square One',
-'Vaughan Mills',
-'North Bay',
-'New Sudbury',
-
-
-                  ]:
-        data = scrapper.scrap('michael hill', store)
+    for store in store_names.midas:
+        data = scrapper.scrap('midas', store)
         result.append(data)
         print(data)
 
@@ -246,7 +172,7 @@ if __name__ == '__main__':
 
     csv_columns = ['brand', 'store', 'fb_link','g_link']
     dict_data = result
-    csv_file = "mh_store_ca.csv"
+    csv_file = "midas_store_au.csv"
     try:
         with open(csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
