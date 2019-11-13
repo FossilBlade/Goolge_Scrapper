@@ -20,6 +20,7 @@ import datetime
 import random
 
 import logging
+import fnmatch
 
 from googlesearch import search
 
@@ -45,6 +46,16 @@ user_agent_list = [
     # 'Mozilla/5.0 (X11; Linux i586; rv:31.0) Gecko/20100101 Firefox/70.0'
 ]
 
+def get_json_files_from_dir(folder_path):
+    result =[os.path.abspath(os.path.join(folder_path,f )) for f in fnmatch.filter(os.listdir(folder_path), '*.json')]
+    return result
+
+
+def read_json_file(file_path):
+    with open(file_path) as json_file:
+        data = json.load(json_file)
+
+    return data
 
 class GScrapper:
 
@@ -101,9 +112,27 @@ class GScrapper:
 
         self.driver.set_page_load_timeout(page_load_timeout)
 
-    # def __del__(self):
-    #     if self.close_driver == True and self.driver:
-    #         self.driver.quit()
+    def scrap_fb_link(self, brand, store):
+        print('Scrapping FB link {} {}'.format(brand, store))
+        # data = {'brand': brand, 'store': store, 'fb_link': None, 'g_link': None}
+        search_query = 'site:facebook.com AND {} {}'.format(brand, store)
+
+        self.driver.get(GOOLGE_URL)
+        search_box = self.driver.find_element_by_name('q')
+        search_box.send_keys(search_query)
+        search_box.send_keys(Keys.RETURN)
+        sleep(1)
+
+        try:
+            fb_link_a = self.driver.find_element_by_xpath('//*[@id="rso"]//a')
+        except:
+            print('FB link not found')
+            return None
+        else:
+            link = fb_link_a.get_attribute('href')
+            return link
+
+
 
     def scrap(self, brand, store):
         print('Scrapping {} {}'.format(brand,store))
@@ -137,17 +166,17 @@ class GScrapper:
                 print('Google Review Link not found')
             else:
                 a.click()
-                sleep(.5)
+                sleep(1)
                 gr_link = self.driver.current_url
 
                 data.update({'g_link': gr_link})
 
 
             if fb_link_found == False:
-
-                for url in search('site:facebook.com AND {}'.format(search_query), stop=1,tld=GOOLGE_TLD):
-                    data.update({'fb_link': url})
-                    break
+                data.update({'fb_link': 'NOT FOUND'})
+                # for url in search('site:facebook.com AND {}'.format(search_query), stop=1,tld=GOOLGE_TLD):
+                #
+                #     break
 
 
         return data
@@ -157,22 +186,27 @@ if __name__ == '__main__':
     import csv
     import store_names
     from random import randint
+    brand = 'michael hill'
+    stores = store_names.mh_au
+    csv_file = "mh_store_au.csv"
     scrapper = GScrapper(headless=True, close_driver=True)
     result =[]
-    for store in store_names.midas:
-        data = scrapper.scrap('midas', store)
+
+    for idx,store in enumerate(stores):
+        print('Processing {}/{} store'.format(idx+1,len(stores)))
+        data = scrapper.scrap(brand, store)
         result.append(data)
         print(data)
 
-
-
-        # sleep(randint(1,))
-
-
+    for idx,data in  enumerate(result):
+        print('Processing {}/{} FB Link'.format(idx + 1, len(result)))
+        if data.get('fb_link')=='NOT FOUND':
+            fb_link = scrapper.scrap_fb_link(data.get('brand'), data.get('store'))
+            data.update({'fb_link':fb_link})
 
     csv_columns = ['brand', 'store', 'fb_link','g_link']
     dict_data = result
-    csv_file = "midas_store_au.csv"
+
     try:
         with open(csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
