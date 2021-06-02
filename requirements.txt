@@ -4,4 +4,4 @@ chromedriver-binary==78.0.3904.70.0
 google==2.0.2
 selenium==3.141.0
 soupsieve==1.9.5
-urllib3==1.25.7
+urllib3==1.26.5
